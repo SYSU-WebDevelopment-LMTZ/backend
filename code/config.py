@@ -6,6 +6,7 @@ class Config:
     SECRET_KEY = 'hard to guess string'
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = True
+    JSON_AS_ASCII = False
 
 
 class DevelopmentConfig(Config):

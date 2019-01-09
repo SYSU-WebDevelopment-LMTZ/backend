@@ -4,5 +4,5 @@ from .. import db
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
-    return 'OK'
+    return 'OK\n'
 

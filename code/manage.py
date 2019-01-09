@@ -1,5 +1,6 @@
 import os
 from app import create_app, db
+from app.models import Customer, Order, Dish, RecommendDish, Restaurant
 from flask_script import Manager, Shell
 from flask_migrate import Migrate, MigrateCommand
 
@@ -9,7 +10,13 @@ migrate = Migrate(app, db)
 
 
 def make_shell_context():
-    return dict(app=app, db=db)
+    return dict(app=app, 
+                db=db, 
+                Customer=Customer, 
+                Order=Order, 
+                Dish=Dish, 
+                RecommendDish=RecommendDish, 
+                Restaurant=Restaurant)
 
 
 manager.add_command('shell', Shell(make_context=make_shell_context))
