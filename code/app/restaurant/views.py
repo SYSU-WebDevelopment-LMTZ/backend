@@ -1,20 +1,20 @@
+from flask import request, make_response, jsonify
+from flask_login import login_required, login_user, logout_user, current_user
 from . import restaurant
 from .. import db
 from ..models import Restaurant
-from flask import request, make_response, jsonify
-from flask_login import login_required, login_user, logout_user, current_user
 
 
 @restaurant.route('/', methods=['POST'])
 def register():
     if not request.json: # json不存在则返回400
-        response = make_response(jsonify({'message' : 'json不存在'}), 400) 
+        response = make_response(jsonify({'message' : 'json不存在'}), 400)
         return response
 
     fields = ['phone', 'password', 'name', 'description', 'logo']
     for item in fields: # json中某些字段缺失则返回400
         if item not in request.json:
-            response = make_response(jsonify({'message' : 'restaurant.{}字段不存在'.format(item)}) , 400) 
+            response = make_response(jsonify({'message' : 'restaurant.{}字段不存在'.format(item)}) , 400)
             return response
 
     phone = request.json['phone']
@@ -31,11 +31,10 @@ def register():
         response = make_response(jsonify({'message' : '餐厅名已经被注册过'}), 400)
         return response
 
-
-    new_restaurant = Restaurant(phone=phone, 
-                                password=password, 
-                                name=name, 
-                                description=description, 
+    new_restaurant = Restaurant(phone=phone,
+                                password=password,
+                                name=name,
+                                description=description,
                                 image_url=logo)
     db.session.add(new_restaurant)
     db.session.commit()
@@ -46,13 +45,13 @@ def register():
 @restaurant.route('/session', methods=['POST'])
 def login():
     if not request.json: # json不存在则返回400
-        response = make_response(jsonify({'message' : 'json不存在'}), 400) 
+        response = make_response(jsonify({'message' : 'json不存在'}), 400)
         return response
 
     fields = ['phone', 'password']
     for item in fields: # json中某些字段缺失则返回400
         if item not in request.json:
-            response = make_response(jsonify({'message' : 'restaurant.{}字段不存在'.format(item)}) , 400) 
+            response = make_response(jsonify({'message' : 'restaurant.{}字段不存在'.format(item)}) , 400)
             return response
 
     phone = request.json['phone']
@@ -61,7 +60,7 @@ def login():
     restaurant = Restaurant.query.filter_by(phone=phone).first()
     if restaurant and restaurant.verify_password(password): # 验证密码
         login_user(restaurant, True) # Flask-Login提供的登陆函数，把该餐厅标记为已登录
-        response = make_response(jsonify({'message' : '成功登陆'}), 200) 
+        response = make_response(jsonify({'message' : '成功登陆'}), 200)
         return response
 
     response = make_response(jsonify({'message' : '电话号码或密码不正确'}), 400) # 登陆失败
@@ -88,8 +87,8 @@ def logout():
 #         login_user(restaurant, True) # Flask-Login提供的登陆函数，把该餐厅标记为已登录
 #         return '成功登陆'
 #     return '错误密码'
-# 
-# 
+#
+#
 # @restaurant.route('/logout')
 # def logout():
 #     logout_user()
@@ -100,4 +99,49 @@ def logout():
 @login_required
 def test_login():
     return 'successful login'
+
+
+@restaurant.route('/self/info', methods=['GET', 'POST'])
+@login_required
+def get_info():
+    if request.method == 'GET':
+        if current_user.is_authenticated:
+            restaurant = current_user._get_current_object()
+
+            res = {}
+            res['phone'] = restaurant.phone
+            res['name'] = restaurant.name
+            res['description'] = restaurant.description
+            res['logo'] = restaurant.image_url
+
+            response = make_response(jsonify(res), 200)
+            return response
+        else:
+            response = make_response(jsonify({'message' : '获取信息失败'}), 400)
+            return response
+
+    elif request.method == 'POST':
+        if current_user.is_authenticated:
+            if not request.json: # json不存在则返回400
+                response = make_response(jsonify({'message' : 'json不存在'}), 400)
+                return response
+            restaurant = current_user._get_current_object()
+
+            if 'name' in request.json:
+                restaurant.name = request.json['name']
+            if 'description' in request.json:
+                restaurant.description = request.json['description']
+            if 'logo' in request.json:
+                restaurant.logo = request.json['image_url']
+            if 'password' in request.json:
+                restaurant.password = request.json['password']
+
+            db.session.add(restaurant)
+            db.session.commit()
+
+            response = make_response(jsonify({'message' : '修改成功'}), 200)
+            return response
+        else:
+            response = make_response(jsonify({'message' : '修改信息失败'}), 400)
+            return response
 

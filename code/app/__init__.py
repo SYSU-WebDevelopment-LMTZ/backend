@@ -15,10 +15,15 @@ def create_app(config_name):
     db.init_app(app)
     login_manager.init_app(app)
 
+    # 注册蓝本
     from .main import main as main_blueprint
     from .restaurant import restaurant as restaurant_blueprint
+    from .dish import dish as dish_blueprint
+    from .order import order as order_blueprint
     app.register_blueprint(main_blueprint)
     app.register_blueprint(restaurant_blueprint, url_prefix='/restaurant')
+    app.register_blueprint(dish_blueprint, url_prefix='/dish')
+    app.register_blueprint(order_blueprint, url_prefix='/order')
 
     return app
 

@@ -5,18 +5,18 @@ from . import db
 from . import login_manager
 
 
-class Customer(db.Model):
-    __tablename__ = 'customers'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True)
-    orders = db.relationship('Order', backref='customer') # 一个顾客对应多个订单
-
-    def __repr__(self):
-        return '<Customer {}[{}]'.format(self.name, self.order_id)
+# class Customer(db.Model):
+#     __tablename__ = 'customers'
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String(64), unique=True)
+#     orders = db.relationship('Order', backref='customer') # 一个顾客对应多个订单
+#
+#     def __repr__(self):
+#         return '<Customer {}[{}]'.format(self.name, self.order_id)
 
 
 # Order和Dish是多对多关系, orderdishs作为联结表
-orderdishs = db.Table('orderdishs', 
+orderdishs = db.Table('orderdishs',
                       db.Column('order_id', db.Integer, db.ForeignKey('orders.id')),
                       db.Column('dish_id', db.Integer, db.ForeignKey('dishs.id')))
 
@@ -25,11 +25,11 @@ class Order(db.Model):
     __tablename__ = 'orders'
     id = db.Column(db.Integer, primary_key=True)
     table_id = db.Column(db.Integer, default=0)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id')) # 订单和顾客是多对一关系
-    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id')) # 订单和餐厅是多对一关系
-    dishs = db.relationship('Dish', 
-                            secondary=orderdishs, 
-                            backref=db.backref('orders', lazy='dynamic'), 
+    # customer_id = db.Column(db.Integer, db.ForeignKey('customers.id')) # 订单和顾客是多对一关系
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), default=1) # 订单和餐厅是多对一关系
+    dishs = db.relationship('Dish',
+                            secondary=orderdishs,
+                            backref=db.backref('orders', lazy='dynamic'),
                             lazy='dynamic')
     state = db.Column(db.Integer, default=0) # 0未支付 1已支付 2可取餐
     price = db.Column(db.Float, nullable=False)
@@ -47,7 +47,7 @@ class Dish(db.Model):
     price = db.Column(db.Float, nullable=False)
     description = db.Column(db.Text)
     image_url = db.Column(db.String(64))
-    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id')) # 菜品和餐厅是多对一关系
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), default=1) # 菜品和餐厅是多对一关系
 
     def __repr__(self):
         return '<Dish id:{}\tname:{}>'.format(self.id, self.name)
@@ -93,5 +93,5 @@ class Restaurant(UserMixin, db.Model):
 @login_manager.user_loader
 def load_user(id):
     restaurant = Restaurant.query.filter_by(id=id).first()
-    return restaurant 
+    return restaurant
 
