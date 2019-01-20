@@ -15,10 +15,17 @@ from . import login_manager
 #         return '<Customer {}[{}]'.format(self.name, self.order_id)
 
 
-# Order和Dish是多对多关系, orderdishs作为联结表
-orderdishs = db.Table('orderdishs',
-                      db.Column('order_id', db.Integer, db.ForeignKey('orders.id')),
-                      db.Column('dish_id', db.Integer, db.ForeignKey('dishs.id')))
+# # Order和Dish是多对多关系, orderdishs作为联结表
+# orderdishs = db.Table('orderdishs',
+#                       db.Column('order_id', db.Integer, db.ForeignKey('orders.id')),
+#                       db.Column('dish_id', db.Integer, db.ForeignKey('dishs.id')))
+
+
+class OrderDish(db.Model):
+    __tablename__ = 'orderdishes'
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), primary_key=True)
+    dish_id = db.Column(db.Integer, db.ForeignKey('dishs.id'), primary_key=True)
+    dish_count = db.Column(db.Integer, default=1)
 
 
 class Order(db.Model):
@@ -27,10 +34,11 @@ class Order(db.Model):
     table_id = db.Column(db.Integer, default=0)
     # customer_id = db.Column(db.Integer, db.ForeignKey('customers.id')) # 订单和顾客是多对一关系
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), default=1) # 订单和餐厅是多对一关系
-    dishs = db.relationship('Dish',
-                            secondary=orderdishs,
-                            backref=db.backref('orders', lazy='dynamic'),
-                            lazy='dynamic')
+    dishs = db.relationship('OrderDish',
+                            foreign_keys=[OrderDish.order_id],
+                            backref=db.backref('order', lazy='joined'),
+                            lazy='dynamic',
+                            cascade='all, delete-orphan')
     state = db.Column(db.Integer, default=0) # 0未支付 1已支付 2可取餐
     price = db.Column(db.Float, nullable=False)
     note = db.Column(db.Text) # 顾客的备注
@@ -38,6 +46,14 @@ class Order(db.Model):
 
     def __repr__(self):
         return '<Order id:{}\tcustomer:{}\ttime:{}>'.format(self.id, self.customer_id, self.time)
+
+    def add_dish(self, dish, dish_count=1):
+        if not self.has_include(dish):
+            od = OrderDish(order_id=self.id, dish_id=dish.id, dish_count=dish_count)
+            db.session.add(od)
+
+    def has_include(self, dish):
+        return self.dishs.filter_by(dish_id=dish.id).first() is not None
 
 
 class Dish(db.Model):
@@ -48,6 +64,11 @@ class Dish(db.Model):
     description = db.Column(db.Text)
     image_url = db.Column(db.String(64))
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), default=1) # 菜品和餐厅是多对一关系
+    orders = db.relationship('OrderDish',
+                             foreign_keys=[OrderDish.dish_id],
+                             backref=db.backref('dish', lazy='joined'),
+                             lazy='dynamic',
+                             cascade='all, delete-orphan')
 
     def __repr__(self):
         return '<Dish id:{}\tname:{}>'.format(self.id, self.name)

@@ -16,6 +16,7 @@ def get_all_dishs():
         current['name'] = dish.name
         current['price'] = dish.price
         current['imageurl'] = dish.image_url
+        current['description'] = dish.description
 
         res.append(current)
 
@@ -25,6 +26,7 @@ def get_all_dishs():
 
 @dish.route('/<int:id>', methods=['GET'])
 def get_dish_detail(id):
+    print('id:{}'.format(id))
     dish = Dish.query.filter_by(id=id).first()
 
     if dish is None:
