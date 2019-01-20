@@ -7,7 +7,7 @@
     virtualenv -p /usr/bin/python3 --no-site-packages venv
     source venv/bin/activate
     pip3 install -r requirements.txt
-    python3 manage.py runserver --host 0.0.0.0 --port 5000
+    gunicorn -w 4 -b 0.0.0.0:5000 manage:app
     ```
 - 打开浏览器，输入地址
     ```
