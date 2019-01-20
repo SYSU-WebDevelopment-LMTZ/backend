@@ -102,23 +102,33 @@ def test_login():
 
 
 @restaurant.route('/self/info', methods=['GET', 'POST'])
-@login_required
+# @login_required
 def get_info():
     if request.method == 'GET':
-        if current_user.is_authenticated:
-            restaurant = current_user._get_current_object()
+        # if current_user.is_authenticated:
+        #     restaurant = current_user._get_current_object()
 
-            res = {}
-            res['phone'] = restaurant.phone
-            res['name'] = restaurant.name
-            res['description'] = restaurant.description
-            res['logo'] = restaurant.image_url
+        #     res = {}
+        #     res['phone'] = restaurant.phone
+        #     res['name'] = restaurant.name
+        #     res['description'] = restaurant.description
+        #     res['logo'] = restaurant.image_url
 
-            response = make_response(jsonify(res), 200)
-            return response
-        else:
-            response = make_response(jsonify({'message' : '获取信息失败'}), 400)
-            return response
+        #     response = make_response(jsonify(res), 200)
+        #     return response
+        # else:
+        #     response = make_response(jsonify({'message' : '获取信息失败'}), 400)
+        #     return response
+        restaurant = Restaurant.query.first()
+
+        res = {}
+        res['phone'] = restaurant.phone
+        res['name'] = restaurant.name
+        res['description'] = restaurant.description
+        res['logo'] = restaurant.image_url
+
+        response = make_response(jsonify(res), 200)
+        return response
 
     elif request.method == 'POST':
         if current_user.is_authenticated:

@@ -20,6 +20,16 @@ def get_all_orders():
         current['state'] = state2str[order.state]
         current['price'] = order.price
         current['ordertime'] = order.time
+        dishs = order.dishs.all()
+        all_dish = []
+        for dish in dishs:
+            tmp = {}
+            dish_obj = Dish.query.filter_by(id=dish.dish_id).first()
+            tmp['dishname'] = dish_obj.name
+            tmp['dishcount'] = dish.dish_count
+            all_dish.append(tmp)
+        current['dishes'] = all_dish
+        current['note'] = order.note
 
         res.append(current)
 
@@ -45,10 +55,13 @@ def get_order_detail(id):
     res['state'] = state2str[order.state]
     res['price'] = order.price
     res['ordertime'] = order.time
-    dishid = []
+    all_dish = []
     for dish in dishs:
-        dishid.append(dish.id)
-    res['dishid'] = dishid
+        tmp = {}
+        tmp['dishid'] = dish.dish_id
+        tmp['dishcount'] = dish.dish_count
+        all_dish.append(tmp)
+    res['dishes'] = all_dish
     res['note'] = order.note
 
     response = make_response(jsonify(res), 200)
@@ -95,7 +108,7 @@ def submit_order():
         response = make_response(jsonify({'message' : 'json不存在'}), 400)
         return response
 
-    fields = ['restaurant_id', 'tableid', 'dishid', 'note']
+    fields = ['restaurant_id', 'tableid', 'dishes', 'note']
     for item in fields: # json中某些字段缺失则返回400
         if item not in request.json:
             response = make_response(jsonify({'message' : 'order.{}字段不存在'.format(item)}) , 400)
@@ -106,22 +119,29 @@ def submit_order():
 
     price = 0.0
     dishs = []
-    for id in request.json['dishid']:
+    counts = []
+    print(request.json)
+    for item in request.json['dishes']:
+        id = item['dishid']
+        dish_count = item['count']
         dish = Dish.query.filter_by(id=id).first()
         if dish is None:
             response = make_response(jsonify({'message' : 'dishid:{}不存在'.format(id)}), 400)
             return response
-        price += dish.price
+        if dish_count <= 0:
+            response = make_response(jsonify({'message' : 'dish_count <= 0'}), 400)
+            return response
+        price += dish.price * dish_count
         dishs.append(dish)
+        counts.append(dish_count)
 
     note = request.json['note']
 
     new_order = Order(table_id=tableid, restaurant_id=restaurant_id, price=price, note=note)
-    for dish in dishs:
-        new_order.dishs.append(dish)
-
     db.session.add(new_order)
     db.session.commit()
+    for i in range(len(dishs)):
+        new_order.add_dish(dishs[i], counts[i])
 
     response = make_response(jsonify({'orderid' : new_order.id}), 200)
     return response
